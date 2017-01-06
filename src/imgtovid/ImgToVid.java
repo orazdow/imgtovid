@@ -35,18 +35,20 @@ public class ImgToVid {
     static BufferedImage img;
     
     public static void main(String[] args) {
-     
+        String inpath;
+        String outpath = "outvid.mp4";
         try {
-        img = ImageIO.read(new File(args[0]));
+        inpath = args[0];    
+        img = ImageIO.read(new File(inpath));
+        outpath = inpath.substring(0, inpath.lastIndexOf('.')) + ".mp4";
         } catch (IOException e) {
         System.err.println(e.getMessage());
         }
         
-        String outpath = "outvid.mp4";
         if(args.length > 1){
           outpath = args[1];
         }
-       
+               
        img = resize(img, 400);
        width = img.getWidth();
        height = img.getHeight();
