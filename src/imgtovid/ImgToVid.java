@@ -44,11 +44,12 @@ public class ImgToVid {
     } catch (IOException e) {
     System.err.println(e.getMessage());
      }
-    
+       
        img = resize(img, 400);
        width = img.getWidth();
        height = img.getHeight();
        int[] buff = new int[width];
+       SoundPix soundgen = new SoundPix(width);
        
      int[] linepix = new int[img.getWidth()+1];
      for (int i = 0; i < linepix.length; i++) {
@@ -81,14 +82,20 @@ public class ImgToVid {
         writer.encodeVideo(videoStreamIndex, frame, nextFrameTime, 
           DEFAULT_TIME_UNIT);
         restoreLine(frame, a, buff);
+        soundgen.getLevels(buff);
         nextFrameTime += frameRate; a++;
         //  System.out.println(a);
       }
 
       // compute and encode the audio for the balls
-       for (int i = 0; i < mSamples.length; ++i)
-        mSamples[i] = (short)(Math.random()*Short.MAX_VALUE);
-       
+          // short out = 0;
+       for (int i = 0; i < mSamples.length; ++i){
+          //  mSamples[i] = (short)(soundgen.oscs[50].incOut() + (short)(soundgen.oscs[40].incOut())   )    ;
+            mSamples[i] = soundgen.getOutSig();
+       }
+       //   mSamples[i] =  soundgen.getOutSig(); //(short)(Math.random()*Short.MAX_VALUE);
+      //   mSamples[i] =  (short)(Math.random()*Short.MAX_VALUE);
+      
    //   short[] samples = mSamples;
       writer.encodeAudio(audioStreamIndex, mSamples, clock, 
         DEFAULT_TIME_UNIT);
@@ -131,8 +138,119 @@ static BufferedImage resize(BufferedImage inimage, int targetheight){
     return dimg;
 }
 
-static class soundPix{
+static class SoundPix{
+
+final int SAMPLING_RATE = 44100;      
+final int SAMPLE_SIZE = 2; 
+int SamplesThisPass;
+        
+int numOscs = 160;
+float out = 0;
+double baseFreq = 50;
+short[] sineTable = new short[4096]; //affects step resolution
+Osc[] oscs;
+int div;
+float coefs[];
+
+
+SoundPix(int imgwidth){
+if(numOscs >= imgwidth){
+  div = 1;  
+}else{
+div =  imgwidth/numOscs; 
+}
+oscs = new Osc[numOscs];
+initTable(sineTable);
+initOscs();    
+}
+
+//void setCoeffs(float[] in){
+//    for(int i = 0; i < in.length; i++){
+//        if(i < oscs.length){
+//            oscs[i].amp = in[i];
+//        }else{ System.out.println("ERROR: pix array: "+in.length+" larger than osc array: "+oscs.length); break; }
+//    }
+//}
+
+void getLevels(int[] in){
+        int a = 0;
+    for (int i = 0; i < in.length; i+= div) {
+       // System.out.println(a);
+        if(a < oscs.length){ 
+          oscs[a].amp = (float)getBrightness(in[i])/255;
+        }   a++;  
+    }
+ 
+//for(int i = 0; i < oscs.length; i++){
+//    oscs[i].amp = 1;
+//}
     
 }
+
+static int getBrightness(int in){
+  return ((in & 0xff) + (in >> 8 & 0xff) + (in >> 16 & 0xff));
+}
+
+Short getOutSig(){
+    out = 0;
+    for (int i = 0; i < numOscs; i++) {
+        out += oscs[i].incOut()/numOscs;
+    }
+    return (short)out;
+    
+    
+    //(short)(soundgen.oscs[50].incOut() + (short)(soundgen.oscs[40].incOut())   )
+}
+
+void initTable(short[] table){
+for (int i = 0; i < table.length; i++) {
+      table[i] = (short)(Math.sin(2*Math.PI * (i/(double)table.length) )*Short.MAX_VALUE/2);        
+}
+}
+
+void initOscs(){ 
+    double freq = baseFreq; //int a = 0;
+    for(int i = 0; i < numOscs; i++){
+          freq = baseFreq*Math.pow(2,i/(double)25);
+        oscs[i] = new Osc(sineTable);
+        oscs[i].setFreq(freq);
+      //  System.out.println(oscs[i].freq+" "+oscs[i].step);;
+    }
+}
+
+
+ class Osc{
+int SAMPLING_RATE = 44100;
+float amp = 0; //1;
+int theta;
+double freq;
+int step;
+short[] table;
+
+Osc(short[] table){
+  this.table = table;  
+}
+
+void setFreq(double freq){
+this.freq = freq; 
+step = (int)(freq/SAMPLING_RATE*table.length);   
+  
+}
+
+void setAmp(float in){
+    amp = in;
+}
+
+float incOut(){
+theta +=step;
+if(theta >= table.length){theta = 0;}
+return table[theta]*amp;   
+}
+
+}
+
+}
+
+
 
 }
