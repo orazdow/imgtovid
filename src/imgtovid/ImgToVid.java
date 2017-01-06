@@ -17,7 +17,6 @@ import javax.imageio.ImageIO;
 public class ImgToVid {
 
     // video parameters
-
     static final int videoStreamIndex = 0;
     static final int videoStreamId = 0;
     static final long frameRate = DEFAULT_TIME_UNIT.convert(25, MILLISECONDS);
@@ -25,77 +24,75 @@ public class ImgToVid {
     static int height = 320;
     
     // audio parameters
-
     static final int audioStreamIndex = 1;
     static final int audioStreamId = 0;
     static final int channelCount = 1;
-    static final int sampleRate = 44100; // Hz
+    static final int sampleRate = 44100; 
     static final int sampleCount = 1000;
     
     static final long duration = DEFAULT_TIME_UNIT.convert(height*32, MILLISECONDS); //hack, approximates right num
-    static int a = 0;
-    
+    static int line = 0;    
     static BufferedImage img;
     
     public static void main(String[] args) {
      
-    try {
-    img = ImageIO.read(new File(args[0]));
-    } catch (IOException e) {
-    System.err.println(e.getMessage());
-     }
+        try {
+        img = ImageIO.read(new File(args[0]));
+        } catch (IOException e) {
+        System.err.println(e.getMessage());
+        }
+        
+        String outpath = "outvid.mp4";
+        if(args.length > 1){
+          outpath = args[1];
+        }
        
        img = resize(img, 400);
        width = img.getWidth();
        height = img.getHeight();
+       
        int[] buff = new int[width];
+      
        SoundPix soundgen = new SoundPix(width);
        
-     int[] linepix = new int[img.getWidth()+1];
-     for (int i = 0; i < linepix.length; i++) {
-        linepix[i] = 0xffffff;
-      }
-        
-           final IMediaWriter writer = ToolFactory.makeWriter("outvid.mp4");
+      int[] linepix = new int[img.getWidth()+1];
+      for (int i = 0; i < linepix.length; i++) { linepix[i] = 0xffffff; }
+             
+        final IMediaWriter writer = ToolFactory.makeWriter(outpath);
            
-              long nextFrameTime = 0;
-              long totalSampleCount = 0;
-              short[] mSamples = new short[sampleCount];
+        long nextFrameTime = 0;
+        long totalSampleCount = 0;
+        short[] mSamples = new short[sampleCount];
 
-           writer.addVideoStream(videoStreamIndex, videoStreamId,
-             width, height);
+        writer.addVideoStream(videoStreamIndex, videoStreamId,
+          width, height);
 
-   
-           writer.addAudioStream(audioStreamIndex, audioStreamId,
-            channelCount, sampleRate); 
+        writer.addAudioStream(audioStreamIndex, audioStreamId,
+         channelCount, sampleRate); 
      
         for (long clock = 0; clock < duration; clock = IAudioSamples
            .samplesToDefaultPts(totalSampleCount, sampleRate))
     {
-      // while the clock time exceeds the time of the next video frame,
-      // get and encode the next video frame
-
-      while (clock >= nextFrameTime && a < height)
+      while (clock >= nextFrameTime && line < height)
       {
         BufferedImage frame = img; 
-        paintLine(frame, a, buff, linepix);
+        paintLine(frame, line, buff, linepix);
         
-        writer.encodeVideo(videoStreamIndex, frame, nextFrameTime, 
-          DEFAULT_TIME_UNIT);
+        writer.encodeVideo(videoStreamIndex, frame, nextFrameTime, DEFAULT_TIME_UNIT);
+          
         
-        restoreLine(frame, a, buff);
+        restoreLine(frame, line, buff);
         soundgen.getLevels(buff);
         
-        nextFrameTime += frameRate; a++;
+        nextFrameTime += frameRate; 
+        line++;
       }
 
-       for (int i = 0; i < mSamples.length; ++i){
-            mSamples[i] = soundgen.getOutSig();
-        }
-
-      writer.encodeAudio(audioStreamIndex, mSamples, clock, 
-        DEFAULT_TIME_UNIT);
-      totalSampleCount += sampleCount;
+       for (int i = 0; i < mSamples.length; ++i)
+       mSamples[i] = soundgen.getOutSig();
+        
+       writer.encodeAudio(audioStreamIndex, mSamples, clock, DEFAULT_TIME_UNIT);       
+       totalSampleCount += sampleCount;
     }
     
     writer.close();
@@ -122,6 +119,9 @@ static BufferedImage resize(BufferedImage inimage, int targetheight){
     int newW = (int)((float)inw*ratio);
     int newH = (int)((float)inh*ratio);
     
+    if(newH % 2 != 0){newH--;}
+    if(newW % 2 != 0){newW--;}
+    
     Image tmp = img.getScaledInstance(newW, newH, Image.SCALE_SMOOTH);
     BufferedImage dimg = new BufferedImage(newW, newH, inimage.getType());
     
@@ -138,7 +138,7 @@ final int SAMPLING_RATE = 44100;
 final int SAMPLE_SIZE = 2; 
 int SamplesThisPass;
         
-int numOscs = 160;
+int numOscs = 200;
 float out = 0;
 double baseFreq = 50;
 short[] sineTable = new short[4096]; //affects step resolution
@@ -160,7 +160,7 @@ void getLevels(int[] in){
         int a = 0;
     for (int i = 0; i < in.length; i+= div) {
         if(a < oscs.length){ 
-          oscs[a].amp = (float)getBrightness(in[i])/255;
+          oscs[a].amp = Math.pow(getBrightness(in[i])/(double)255, 2.5);
         }   a++;  
     }
 
@@ -195,9 +195,9 @@ void initOscs(){
 }
 
 
- class Osc{
+class Osc{
 int SAMPLING_RATE = 44100;
-float amp = 0; 
+double amp = 0; 
 int theta;
 double freq;
 int step;
@@ -213,11 +213,11 @@ step = (int)(freq/SAMPLING_RATE*table.length);
   
 }
 
-void setAmp(float in){
+void setAmp(double in){
    amp = in;
 }
 
-float incOut(){
+double incOut(){
 theta +=step;
 if(theta >= table.length){theta = 0;}
 return table[theta]*amp;   
