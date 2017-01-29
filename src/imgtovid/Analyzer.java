@@ -3,6 +3,10 @@ package imgtovid;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.IOException;
+
 
 public class Analyzer {
 
@@ -10,9 +14,13 @@ BufferedImage img;
 static float[] hsb = new float[3];
 boolean invert = false;
 String fname;
+FileWriter  writer;
+PrintWriter printWriter;
 
-final int streakThresh = 500;
+
+final int streakThresh = 700;
 final int totalThresh = 50000;
+final float ratioThresh = 10;
 
 Analyzer(BufferedImage img){
     this.img = img;
@@ -24,11 +32,17 @@ Analyzer(BufferedImage img, String fname){
 
 boolean invertHeuristic(){
     
-  int s = streakCount(img, 0.8, 1, 20);
-  int r = totalInRange(img, 0.8, 2);   
+int s = streakCount(img, 0.8, 1, 20);
+int t = totalInRange(img, 0.8, 2);  
+float r = lightDarkRatio(20, 70); 
   
-  return s > streakThresh && r > totalThresh;
+ return  t > totalThresh && ( (s > streakThresh && r > ratioThresh ) || s > 1300 );
   
+}
+
+boolean satHeuristic(){
+    //return  ... && !invertHeuristic
+    return false;
 }
 
 double getHSB(int in, int type){
@@ -39,10 +53,11 @@ double getHSB(int in, int type){
     else return hsb[type];
 }
 
-//sat vs bright channel estimation
+//  sat vs bright channel estimation
 int histDiff(){    
 return countDiffLines(lineHist(img, 1, 0.001, 0)) - countDiffLines(lineHist(img, 2, 0.001, 0));
 }
+
 int histDiff(double thresh){
  return countDiffLines(lineHist(img, 1, 0.001, thresh)) - countDiffLines(lineHist(img, 2, 0.001, thresh));
 }
@@ -129,31 +144,64 @@ double current; int count = 0;
     
     return count;
 }
- // light dark streak ratio
-double streakRatio(BufferedImage img, double darklev, double lightlev, double range, int thresh){
-
-    double current; int darkCount = 0; int lightCount = 0; int dStreak = 0; int lStreak = 0;
-
-    for(int y = 0; y < img.getHeight(); y++ ){
-        for(int x = 0; x < img.getWidth(); x ++){
-         
-            current = getHSB(img.getRGB(x, y),2);
-            
-            if(Math.abs(current - darklev) <= range){
-                darkCount++;
-            }else if(darkCount >= thresh){
-                dStreak++; darkCount = 0;
+ // light/dark  ratio
+float lightDarkRatio(int dark, int light){
+  double darkthresh = dark  /(double)100;
+  double lightthresh = light/(double)100;  
+  double darknum = 0; double lightnum = 0;
+  double current;
+    for(int i = 0; i < img.getWidth(); i++){
+        for(int j = 0; j < img.getHeight(); j++){
+            current =  getHSB(img.getRGB(i, j), 2);
+            if(current <= darkthresh){
+                darknum++;
+            }
+            else if(current >= lightthresh){
+                lightnum++;
             }
             
-            if(Math.abs(current - lightlev) <= range){
-                lightCount++;
-            }else if(lightCount >= thresh){
-                lStreak++; lightCount = 0;
-            }
-            
-          }
-        }    
+        }
+    }
+    return (float)(lightnum/darknum);
     
-    return lStreak / (double)dStreak;
 }
+
+void startLog(String path){
+     try {    
+        writer = new FileWriter(path, true);
+    } catch (IOException ex) {
+         System.err.println( ex.getMessage() );
+    }
+    printWriter = new PrintWriter(writer, true);
+    
+}
+void startLog(){
+     try {    
+        writer = new FileWriter("log.csv", true);
+    } catch (IOException ex) {
+         System.err.println( ex.getMessage() );
+    }
+    printWriter = new PrintWriter(writer, true);
+    
+}
+
+String csvString(){
+    return fname+", "+lightDarkRatio(20, 70)+", "+streakCount(img, 0.8, 1, 20)+", "+totalInRange(img, 0.8, 2)+", "+boolToInt(invertHeuristic())+", U";
+}
+
+void log(){
+   String s = csvString();
+   System.out.println(s);
+   printWriter.append(s+"\r\n"); 
+   printWriter.close();
+}
+
+void print(){
+  System.out.println(csvString());    
+}
+
+int boolToInt(boolean in){
+    return in ? 1 : 0; 
+}
+
 }
