@@ -5,7 +5,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class Batch {
-    String[] list;
+String[] list;
 
 Batch(){
  list = getFiles();
