@@ -9,15 +9,15 @@ public class ImgToVid {
         Analyzer an = new Analyzer(gen.getImg(), gen.getFname());
         an.startLog();
         an.log();
-//        gen.setConvType("bright");
-//        gen.run();
-//        gen = new Converter(inpath);
-//        gen.setConvType("sat");
-//        gen.run();
-//        gen = new Converter(inpath);
-//        gen.setConvType("bright");
-//        gen.setInvert(true);
-//        gen.run();
+        gen.setConvType("bright");
+        gen.run();
+        gen = new Converter(inpath);
+        gen.setConvType("bright");
+        gen.setInvert(true);
+        gen.run();
+        gen = new Converter(inpath);
+        gen.setConvType("sat");
+        gen.run();
                  
     }
 

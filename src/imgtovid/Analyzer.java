@@ -7,12 +7,12 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
 
-
 public class Analyzer {
 
 BufferedImage img;
 static float[] hsb = new float[3];
 boolean invert = false;
+boolean sat = false;
 String fname;
 FileWriter  writer;
 PrintWriter printWriter;
@@ -20,7 +20,9 @@ PrintWriter printWriter;
 
 final int streakThresh = 700;
 final int totalThresh = 50000;
-final float ratioThresh = 10;
+final float ratioThresh = 9;
+final int histDifftThresh = 40;
+final int lineDiffThresh = 2000;
 
 Analyzer(BufferedImage img){
     this.img = img;
@@ -30,36 +32,44 @@ Analyzer(BufferedImage img, String fname){
     this.fname = fname;   
 }
 
-boolean invertHeuristic(){
-    
+boolean invertHeuristic(){  
 int s = streakCount(img, 0.8, 1, 20);
 int t = totalInRange(img, 0.8, 2);  
 float r = lightDarkRatio(20, 70); 
   
- return  t > totalThresh && ( (s > streakThresh && r > ratioThresh ) || s > 1300 );
-  
+ invert =  t > totalThresh && ( (s > streakThresh && r > ratioThresh ) || s > 2000 );
+ return invert;  
 }
 
 boolean satHeuristic(){
-    //return  ... && !invertHeuristic
-    return false;
+    sat = lineSBDiff() > lineDiffThresh && histDiff(0.4) > histDifftThresh;
+    return sat;
 }
 
-double getHSB(int in, int type){
-    Color.RGBtoHSB((in & 0xff), (in >> 8 & 0xff), (in >> 16 & 0xff), hsb);
-    if(invert){
-     return 1.0 - hsb[type];   
-    }
-    else return hsb[type];
+void analyze(){
+    satHeuristic();
+    invertHeuristic();  
 }
 
-//  sat vs bright channel estimation
+boolean getInvert(){
+  return invert;  
+}
+
+boolean getSat(){
+    return sat;
+}
+
+//  sat vs bright hist width diff
 int histDiff(){    
 return countDiffLines(lineHist(img, 1, 0.001, 0)) - countDiffLines(lineHist(img, 2, 0.001, 0));
 }
-
+// less sensitive
 int histDiff(double thresh){
  return countDiffLines(lineHist(img, 1, 0.001, thresh)) - countDiffLines(lineHist(img, 2, 0.001, thresh));
+}
+//sat vs bright line pixel diff
+int lineSBDiff(){
+    return (LineDiff(img, 1, 0.05)-LineDiff(img, 2, 0.05));
 }
 
 int countDiffLines(Integer[] a){
@@ -101,7 +111,21 @@ Integer[] lineHist(BufferedImage img, int type, double range, double thresh){
     
       return lines.toArray(new Integer[lines.size()]);
 }
-   
+
+int LineDiff(BufferedImage img, int type, double thresh){
+    int count = 0;
+    for(int y = 1; y < img.getHeight(); y++ ){
+        for(int x = 0; x < img.getWidth(); x++ ){
+          
+         if( Math.abs(getHSB(img.getRGB(x, y), type) - getHSB(img.getRGB(x, y-1), type)) > thresh ) {
+             count++;
+            }
+          }   
+        } 
+        return count;
+}
+
+
 //count bright streaks
 int streakCount(BufferedImage img, double low, double hi, int thresh){
 
@@ -166,6 +190,11 @@ float lightDarkRatio(int dark, int light){
     
 }
 
+double getHSB(int in, int type){
+    Color.RGBtoHSB((in & 0xff), (in >> 8 & 0xff), (in >> 16 & 0xff), hsb);
+    return hsb[type];
+}
+
 void startLog(String path){
      try {    
         writer = new FileWriter(path, true);
@@ -186,7 +215,8 @@ void startLog(){
 }
 
 String csvString(){
-    return fname+", "+lightDarkRatio(20, 70)+", "+streakCount(img, 0.8, 1, 20)+", "+totalInRange(img, 0.8, 2)+", "+boolToInt(invertHeuristic())+", U";
+    analyze();
+    return fname+", "+lineSBDiff()+", "+histDiff()+", "+histDiff(0.4)+", "+lightDarkRatio(20, 70)+", "+streakCount(img, 0.8, 1, 20)+", "+totalInRange(img, 0.8, 2)+", "+boolToInt(sat)+", "+boolToInt(invert)+", U, U";    
 }
 
 void log(){
