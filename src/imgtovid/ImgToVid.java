@@ -1,10 +1,15 @@
 package imgtovid;
 
+
 public class ImgToVid {
 
     
     public static void main(String[] args) {
-        String inpath = args[0];   
+        Batch b = new Batch();
+        String[] files = b.getList();
+       // String inpath = args[0];   
+       
+        for( String inpath : files){
         Converter gen = new Converter(inpath);
         Analyzer an = new Analyzer(gen.getImg(), gen.getFname());
         an.startLog();
@@ -18,6 +23,7 @@ public class ImgToVid {
         gen = new Converter(inpath);
         gen.setConvType("sat");
         gen.run();
+        }
                  
     }
 

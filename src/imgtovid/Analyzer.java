@@ -2,6 +2,7 @@ package imgtovid;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -17,12 +18,12 @@ String fname;
 FileWriter  writer;
 PrintWriter printWriter;
 
-
 final int streakThresh = 700;
 final int totalThresh = 50000;
 final float ratioThresh = 9;
 final int histDifftThresh = 40;
 final int lineDiffThresh = 2000;
+
 
 Analyzer(BufferedImage img){
     this.img = img;
