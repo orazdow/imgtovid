@@ -38,7 +38,8 @@ int s = streakCount(img, 0.8, 1, 20);
 int t = totalInRange(img, 0.8, 2);  
 float r = lightDarkRatio(20, 70); 
   
- invert =  t > totalThresh && ( (s > streakThresh && r > ratioThresh ) || s > 2000 );
+// invert =  t > totalThresh && ( (s > streakThresh && r > ratioThresh ) || s > 2000 );
+ invert =  t > totalThresh && s > 1300 && r > ratioThresh;
  return invert;  
 }
 
@@ -139,7 +140,8 @@ int streakCount(BufferedImage img, double low, double hi, int thresh){
 
             if( current >= low && current <= hi){
                 count++;
-            }else{
+            }
+            else{
                 if(count >= thresh){
                     mainCount++;
                     count = 0;
@@ -216,8 +218,8 @@ void startLog(){
 }
 
 String csvString(){
-    analyze();
-    return fname+", "+lineSBDiff()+", "+histDiff()+", "+histDiff(0.4)+", "+lightDarkRatio(20, 70)+", "+streakCount(img, 0.8, 1, 20)+", "+totalInRange(img, 0.8, 2)+", "+boolToInt(sat)+", "+boolToInt(invert)+", U, U";    
+    analyze(); //streakcount changed from 0.8 to 0.88, else brackets commented out
+    return fname+", "+lineSBDiff()+", "+histDiff()+", "+histDiff(0.4)+", "+lightDarkRatio(20, 70)+", "+streakCount(img, 0.8, 1, 20)+", "+totalInRange(img, 0.8, 2)+", "+boolToInt(sat)+", "+boolToInt(invert)+", G, G";    
 }
 
 void log(){
