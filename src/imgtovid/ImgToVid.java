@@ -11,7 +11,7 @@ static boolean convert = false;
         String[] files = b.getList();
        // String inpath = args[0];   
         if(args.length > 0 && args[0].equals( "convert" )){convert = true;}
-        if(args.length > 0 && args[0].substring(args[0].lastIndexOf(".")).equals(".jpg")){
+        else if(args.length > 0 && args[0].substring(args[0].lastIndexOf(".")).equals(".jpg")){
         convert = true;
         files = new String[1]; files[0] = args[0];
         }        
