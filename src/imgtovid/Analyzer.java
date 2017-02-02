@@ -38,8 +38,9 @@ int s = streakCount(img, 0.8, 1, 20);
 int t = totalInRange(img, 0.8, 2);  
 float r = lightDarkRatio(20, 70); 
   
-// invert =  t > totalThresh && ( (s > streakThresh && r > ratioThresh ) || s > 2000 );
- invert =  t > totalThresh && s > 1300 && r > ratioThresh;
+// invert =  t > totalThresh && ( (s > streakThresh && r > ratioThresh ) || s > 2000 ); //least strict
+// invert =  t > totalThresh && s > 1300 && r > ratioThresh; // high strictness
+ invert = (t > totalThresh && s > 1300 && r > ratioThresh) || (t > 70000 && (s > 2000 || r > 35)); // mid strictness
  return invert;  
 }
 
@@ -113,7 +114,7 @@ Integer[] lineHist(BufferedImage img, int type, double range, double thresh){
     
       return lines.toArray(new Integer[lines.size()]);
 }
-
+  //num lines with diff above threshhold
 int LineDiff(BufferedImage img, int type, double thresh){
     int count = 0;
     for(int y = 1; y < img.getHeight(); y++ ){
@@ -218,8 +219,8 @@ void startLog(){
 }
 
 String csvString(){
-    analyze(); //streakcount changed from 0.8 to 0.88, else brackets commented out
-    return fname+", "+lineSBDiff()+", "+histDiff()+", "+histDiff(0.4)+", "+lightDarkRatio(20, 70)+", "+streakCount(img, 0.8, 1, 20)+", "+totalInRange(img, 0.8, 2)+", "+boolToInt(sat)+", "+boolToInt(invert)+", G, G";    
+    analyze();
+    return fname+", "+lineSBDiff()+", "+histDiff()+", "+histDiff(0.4)+", "+lightDarkRatio(20, 70)+", "+streakCount(img, 0.8, 1, 20)+", "+totalInRange(img, 0.8, 2)+", "+boolToInt(sat)+", "+boolToInt(invert)+", U, U";    
 }
 
 void log(){
