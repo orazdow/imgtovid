@@ -47,8 +47,7 @@ Converter(String in){
         infile = new File(inpath);
         img = ImageIO.read(infile);
         fname = infile.getName();
-        //outpath = inpath.substring(0, inpath.lastIndexOf('.')) + ".mp4";
-        outpath = inpath.substring(0, inpath.lastIndexOf('.'));
+        outpath = inpath.substring(0, inpath.lastIndexOf('.')) + ".mp4";
         } catch (IOException e) {
         System.err.println(e.getMessage());
         }
@@ -99,17 +98,7 @@ void run(){
       {
           linepix[i] = 0xffffff; 
       }
-        if(convType == 1){
-           outpath += "_sat"; 
-        }
-        else if(convType == 2){
-            outpath += "_bright";  
-        }
-        if(invert){
-            outpath += "_inv";
-        }
-        outpath += ".mp4";
-        
+
         writer = ToolFactory.makeWriter(outpath);
            
         long nextFrameTime = 0;
@@ -182,6 +171,10 @@ BufferedImage resize(BufferedImage inimage, int targetheight){
     g2d.dispose();
     
     return dimg;
+}
+
+void setOutPath(String in){
+    outpath = in;
 }
 
 void setInvert(boolean in){
