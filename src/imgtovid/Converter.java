@@ -85,6 +85,9 @@ void setConvType(String in){
    else if(in.equalsIgnoreCase("sat")|| in.equalsIgnoreCase("saturation")){
        convType = 1;
    }
+   else if(in.equalsIgnoreCase("invert")|| in.equalsIgnoreCase("inv")){
+       setInvert(true);
+   }
    else{
        System.err.println("wrong convType syntax");
    }
