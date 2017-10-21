@@ -78,11 +78,11 @@ void setConvType(int in){
     convType = in;
 }
 
-void setConvType(String in){
-   if(in == "brightness" || in == "bright"){
+void setConvType(String in){ 
+   if(in.equalsIgnoreCase( "bright") || in.equalsIgnoreCase( "brightness")){
        convType = 2;
    }
-   else if(in == "saturation" || in == "sat"){
+   else if(in.equalsIgnoreCase("sat")|| in.equalsIgnoreCase("saturation")){
        convType = 1;
    }
    else{
@@ -171,10 +171,6 @@ BufferedImage resize(BufferedImage inimage, int targetheight){
     g2d.dispose();
     
     return dimg;
-}
-
-void setOutPath(String in){
-    outpath = in;
 }
 
 void setInvert(boolean in){
